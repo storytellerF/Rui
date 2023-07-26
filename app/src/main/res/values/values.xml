@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="Rui">
+        <attr name="starSpace" format="dimension" />
+        <attr name="isIndicator" format="boolean" />
+        <attr name="starCount" format="integer" />
+        <attr name="ratingBarStyle" format="reference" />
+    </declare-styleable>
+</resources>

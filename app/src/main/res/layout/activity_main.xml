@@ -20,5 +20,7 @@
         android:layout_height="wrap_content"
         android:layout_margin="40dp"
         app:ratingBarStyle="@drawable/nft_rating_bar"
+        app:starProgress="2.5"
+        app:starDirection="right"
         app:starSpace="20dp" />
 </androidx.constraintlayout.widget.ConstraintLayout>

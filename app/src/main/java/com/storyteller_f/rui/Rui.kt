@@ -14,13 +14,20 @@ import kotlin.math.ceil
 import kotlin.math.floor
 
 class Rui @JvmOverloads constructor(context: Context, attributeSet: AttributeSet? = null) :
-        View(context, attributeSet) {
+    View(context, attributeSet) {
     private val starSpace: Float
     private val isIndicator: Boolean
     private val starCount: Int
+    private val starDirection: Int
     private val starDrawable: Drawable
     private val backgroundDrawable: Drawable?
     private val clippedDrawable: Drawable
+
+    object Direction {
+        const val left = 1
+        const val right = 2
+    }
+
     private var starProgress: Float = 0f
         set(value) {
             field = value
@@ -39,9 +46,11 @@ class Rui @JvmOverloads constructor(context: Context, attributeSet: AttributeSet
         starDrawable = drawable.getDrawable(drawable.findIndexByLayerId(android.R.id.progress))
         val backgroundIndex = drawable.findIndexByLayerId(android.R.id.background)
         backgroundDrawable =
-                if (backgroundIndex >= 0) drawable.getDrawable(backgroundIndex) else null
+            if (backgroundIndex >= 0) drawable.getDrawable(backgroundIndex) else null
         clippedDrawable = ClipDrawable(starDrawable, Gravity.START, ClipDrawable.HORIZONTAL)
         starProgress = obtainStyledAttributes.getFloat(R.styleable.Rui_starProgress, 0f)
+        starDirection =
+            obtainStyledAttributes.getInteger(R.styleable.Rui_starDirection, Direction.left)
         obtainStyledAttributes.recycle()
     }
 
@@ -53,43 +62,47 @@ class Rui @JvmOverloads constructor(context: Context, attributeSet: AttributeSet
     }
 
     private fun getStarWidth(inheritedWidth: Int) =
-            (inheritedWidth - starSpace * (starCount - 1)) / starCount
+        (inheritedWidth - starSpace * (starCount - 1)) / starCount
 
     override fun onDraw(canvas: Canvas?) {
         super.onDraw(canvas)
         canvas ?: return
         val starWidth = getStarWidth(measuredWidth).toInt()
 
-        val down = floor(starProgress).toInt()
-        for (i in down until starCount + 1) {
-            val start = i * (starWidth + starSpace)
+        val fullStarCount = floor(starProgress).toInt()
+        for (i in fullStarCount until starCount) {
+            val start = starStartAt(i, starWidth)
             canvas.withTranslation(x = start) {
-                backgroundDrawable?.let { drawable ->
-                    drawable.setBounds(0, 0, starWidth, starWidth)
-                    drawable.draw(canvas)
-                }
+                drawStar(backgroundDrawable, starWidth, canvas)
             }
         }
-        repeat(down) {
-            val start = it * (starWidth + starSpace)
+        repeat(fullStarCount) {
+            val start = starStartAt(it, starWidth)
             canvas.withTranslation(x = start) {
-                starDrawable.let { drawable ->
-                    drawable.setBounds(0, 0, starWidth, starWidth)
-                    drawable.draw(canvas)
-                }
+                drawStar(starDrawable, starWidth, canvas)
             }
         }
-        val fl = starProgress - down
-        if (fl > 0) {
-            val start = down * (starWidth + starSpace)
+        val restStarPercent = starProgress - fullStarCount
+        if (restStarPercent > 0) {
+            val start = starStartAt(fullStarCount, starWidth)
             canvas.withTranslation(x = start) {
                 clippedDrawable.let { clipDrawable ->
-                    clipDrawable.level = (10000 * fl).toInt()
-                    clipDrawable.setBounds(0, 0, starWidth, starWidth)
-                    clipDrawable.draw(canvas)
+                    clipDrawable.level = (10000 * restStarPercent).toInt()
+                    drawStar(clipDrawable, starWidth, canvas)
                 }
             }
         }
+    }
+
+    private fun starStartAt(i: Int, starWidth: Int) = (if (starDirection == Direction.right) starCount - 1 - i else i) * (starWidth + starSpace)
+
+    private fun drawStar(
+        drawable: Drawable?,
+        starWidth: Int,
+        canvas: Canvas
+    ) {
+        drawable?.setBounds(0, 0, starWidth, starWidth)
+        drawable?.draw(canvas)
     }
 
     private var moved = false
@@ -103,28 +116,31 @@ class Rui @JvmOverloads constructor(context: Context, attributeSet: AttributeSet
                 moved = true
                 starProgress = (x / currentWidth) * starCount
             }
+
             MotionEvent.ACTION_DOWN -> {
                 moved = false
             }
+
             MotionEvent.ACTION_UP -> {
                 val newStarProgress =
-                        if (moved) {
-                            ceil(starProgress)
-                        } else {
-                            val starWidth = getStarWidth(currentWidth)
-                            val starAndSpace = starWidth + starSpace
-                            // 触摸位置在第几个星星
-                            val position = ceil(x / starAndSpace).toInt()
-                            val oldPosition = ceil(starProgress).toInt()
-                            val oldSplitStar = oldPosition - starProgress > 0
-                            when {
-                                position != oldPosition -> position.toFloat() - 0.5f
-                                oldSplitStar -> {
-                                    position.toFloat()
-                                }
-                                else -> position - 0.5f
+                    if (moved) {
+                        ceil(starProgress)
+                    } else {
+                        val starWidth = getStarWidth(currentWidth)
+                        val starAndSpace = starWidth + starSpace
+                        // 触摸位置在第几个星星
+                        val position = ceil(x / starAndSpace).toInt()
+                        val oldPosition = ceil(starProgress).toInt()
+                        val oldSplitStar = oldPosition - starProgress > 0
+                        when {
+                            position != oldPosition -> position.toFloat() - 0.5f
+                            oldSplitStar -> {
+                                position.toFloat()
                             }
+
+                            else -> position - 0.5f
                         }
+                    }
                 val currentListener = listener
                 if (currentListener == null) {
                     starProgress = newStarProgress

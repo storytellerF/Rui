@@ -7,6 +7,7 @@ import android.graphics.drawable.Drawable
 import android.graphics.drawable.LayerDrawable
 import android.util.AttributeSet
 import android.view.Gravity
+import android.graphics.PointF
 import android.view.MotionEvent
 import android.view.View
 import androidx.core.graphics.withTranslation
@@ -69,7 +70,8 @@ class Rui @JvmOverloads constructor(context: Context, attributeSet: AttributeSet
         canvas ?: return
         val starWidth = getStarWidth(measuredWidth).toInt()
 
-        val fullStarCount = floor(starProgress).toInt()
+        val currentProgress = if (progressWhenMoving > 0f) progressWhenMoving else starProgress
+        val fullStarCount = floor(currentProgress).toInt()
         for (i in fullStarCount until starCount) {
             val start = starStartAt(i, starWidth)
             canvas.withTranslation(x = start) {
@@ -82,7 +84,7 @@ class Rui @JvmOverloads constructor(context: Context, attributeSet: AttributeSet
                 drawStar(starDrawable, starWidth, canvas)
             }
         }
-        val restStarPercent = starProgress - fullStarCount
+        val restStarPercent = currentProgress - fullStarCount
         if (restStarPercent > 0) {
             val start = starStartAt(fullStarCount, starWidth)
             canvas.withTranslation(x = start) {
@@ -105,26 +107,33 @@ class Rui @JvmOverloads constructor(context: Context, attributeSet: AttributeSet
         drawable?.draw(canvas)
     }
 
-    private var moved = false
+    private var positionWhenTouchDown = PointF(-1f, -1f)
+
+    /**
+     * 大于0 代表正在触摸滑动
+     */
+    private var progressWhenMoving: Float = 0f
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         if (event == null || isIndicator) return super.onTouchEvent(event)
         val x = event.x
         val currentWidth = measuredWidth
-
+        val currentPoint = PointF(x, event.y)
         when (event.action) {
             MotionEvent.ACTION_MOVE -> {
-                moved = true
-                starProgress = (x / currentWidth) * starCount
+                progressWhenMoving = (x / currentWidth) * starCount
+                invalidate()
             }
 
             MotionEvent.ACTION_DOWN -> {
-                moved = false
+                progressWhenMoving = -1f
+                positionWhenTouchDown = currentPoint
             }
 
             MotionEvent.ACTION_UP -> {
+                val currentMovingProgress = progressWhenMoving
                 val newStarProgress =
-                    if (moved) {
-                        ceil(starProgress)
+                    if (currentMovingProgress > 0 && (positionWhenTouchDown.minus(currentPoint).sumOfSquares > 20)) {
+                        ceil(currentMovingProgress)
                     } else {
                         val starWidth = getStarWidth(currentWidth)
                         val starAndSpace = starWidth + starSpace
@@ -141,10 +150,12 @@ class Rui @JvmOverloads constructor(context: Context, attributeSet: AttributeSet
                             else -> position - 0.5f
                         }
                     }
+                progressWhenMoving = -1f
+
                 val currentListener = listener
                 if (currentListener == null) {
                     starProgress = newStarProgress
-                } else if (currentListener.onChanged(starProgress, starCount, true)) {
+                } else if (currentListener.onChanged(newStarProgress, starCount, true)) {
                     starProgress = newStarProgress
                 }
             }
@@ -153,7 +164,13 @@ class Rui @JvmOverloads constructor(context: Context, attributeSet: AttributeSet
     }
 
     @FunctionalInterface
-    interface RatingChangedListener {
+    fun interface RatingChangedListener {
         fun onChanged(progress: Float, max: Int, fromUser: Boolean): Boolean
     }
 }
+
+
+val PointF.sumOfSquares: Float
+    get() {
+        return x * x + y * y
+    }

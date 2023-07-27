@@ -13,10 +13,8 @@ import androidx.core.graphics.withTranslation
 import kotlin.math.ceil
 import kotlin.math.floor
 
-class Rui @JvmOverloads constructor(
-    context: Context,
-    attributeSet: AttributeSet? = null
-) : View(context, attributeSet) {
+class Rui @JvmOverloads constructor(context: Context, attributeSet: AttributeSet? = null) :
+        View(context, attributeSet) {
     private val starSpace: Float
     private val isIndicator: Boolean
     private val starCount: Int
@@ -32,21 +30,16 @@ class Rui @JvmOverloads constructor(
     var listener: RatingChangedListener? = null
 
     init {
-        val obtainStyledAttributes =
-            context.obtainStyledAttributes(attributeSet, R.styleable.Rui)
-        starSpace =
-            obtainStyledAttributes.getDimension(R.styleable.Rui_starSpace, 0f)
-        isIndicator =
-            obtainStyledAttributes.getBoolean(R.styleable.Rui_isIndicator, false)
+        val obtainStyledAttributes = context.obtainStyledAttributes(attributeSet, R.styleable.Rui)
+        starSpace = obtainStyledAttributes.getDimension(R.styleable.Rui_starSpace, 0f)
+        isIndicator = obtainStyledAttributes.getBoolean(R.styleable.Rui_isIndicator, false)
         starCount = obtainStyledAttributes.getInteger(R.styleable.Rui_starCount, 5)
-        val drawable =
-            obtainStyledAttributes.getDrawable(R.styleable.Rui_ratingBarStyle)
+        val drawable = obtainStyledAttributes.getDrawable(R.styleable.Rui_ratingBarStyle)
         drawable as LayerDrawable
         starDrawable = drawable.getDrawable(drawable.findIndexByLayerId(android.R.id.progress))
         val backgroundIndex = drawable.findIndexByLayerId(android.R.id.background)
-        backgroundDrawable = if (backgroundIndex >= 0)
-            drawable.getDrawable(backgroundIndex)
-        else null
+        backgroundDrawable =
+                if (backgroundIndex >= 0) drawable.getDrawable(backgroundIndex) else null
         clippedDrawable = ClipDrawable(starDrawable, Gravity.START, ClipDrawable.HORIZONTAL)
         starProgress = obtainStyledAttributes.getFloat(R.styleable.Rui_starProgress, 0f)
         obtainStyledAttributes.recycle()
@@ -60,7 +53,7 @@ class Rui @JvmOverloads constructor(
     }
 
     private fun getStarWidth(inheritedWidth: Int) =
-        (inheritedWidth - starSpace * (starCount - 1)) / starCount
+            (inheritedWidth - starSpace * (starCount - 1)) / starCount
 
     override fun onDraw(canvas: Canvas?) {
         super.onDraw(canvas)
@@ -110,31 +103,34 @@ class Rui @JvmOverloads constructor(
                 moved = true
                 starProgress = (x / currentWidth) * starCount
             }
-
             MotionEvent.ACTION_DOWN -> {
                 moved = false
             }
-
             MotionEvent.ACTION_UP -> {
-                starProgress = if (moved) {
-                    ceil(starProgress)
-                } else {
-                    val starWidth = getStarWidth(currentWidth)
-                    val starAndSpace = starWidth + starSpace
-                    //触摸位置在第几个星星
-                    val position = ceil(x / starAndSpace).toInt()
-                    val oldPosition = ceil(starProgress).toInt()
-                    val oldSplitStar = oldPosition - starProgress > 0
-                    when {
-                        position != oldPosition -> position.toFloat() - 0.5f
-                        oldSplitStar -> {
-                            position.toFloat()
+                val newStarProgress =
+                        if (moved) {
+                            ceil(starProgress)
+                        } else {
+                            val starWidth = getStarWidth(currentWidth)
+                            val starAndSpace = starWidth + starSpace
+                            // 触摸位置在第几个星星
+                            val position = ceil(x / starAndSpace).toInt()
+                            val oldPosition = ceil(starProgress).toInt()
+                            val oldSplitStar = oldPosition - starProgress > 0
+                            when {
+                                position != oldPosition -> position.toFloat() - 0.5f
+                                oldSplitStar -> {
+                                    position.toFloat()
+                                }
+                                else -> position - 0.5f
+                            }
                         }
-
-                        else -> position - 0.5f
-                    }
+                val currentListener = listener
+                if (currentListener == null) {
+                    starProgress = newStarProgress
+                } else if (currentListener.onChanged(starProgress, starCount, true)) {
+                    starProgress = newStarProgress
                 }
-                listener?.onChanged(starProgress, starCount, true)
             }
         }
         return true
@@ -142,6 +138,6 @@ class Rui @JvmOverloads constructor(
 
     @FunctionalInterface
     interface RatingChangedListener {
-        fun onChanged(progress: Float, max: Int, fromUser: Boolean)
+        fun onChanged(progress: Float, max: Int, fromUser: Boolean): Boolean
     }
 }

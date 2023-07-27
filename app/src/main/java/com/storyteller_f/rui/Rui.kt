@@ -21,9 +21,9 @@ class Rui @JvmOverloads constructor(
     private val isIndicator: Boolean
     private val starCount: Int
     private val starDrawable: Drawable
-    private val backgroundDrawable: Drawable
+    private val backgroundDrawable: Drawable?
     private val clippedDrawable: Drawable
-    private var starProgress: Float = 2.5f
+    private var starProgress: Float = 0f
         set(value) {
             field = value
             invalidate()
@@ -43,9 +43,12 @@ class Rui @JvmOverloads constructor(
             obtainStyledAttributes.getDrawable(R.styleable.Rui_ratingBarStyle)
         drawable as LayerDrawable
         starDrawable = drawable.getDrawable(drawable.findIndexByLayerId(android.R.id.progress))
-        backgroundDrawable =
-            drawable.getDrawable(drawable.findIndexByLayerId(android.R.id.background))
+        val backgroundIndex = drawable.findIndexByLayerId(android.R.id.background)
+        backgroundDrawable = if (backgroundIndex >= 0)
+            drawable.getDrawable(backgroundIndex)
+        else null
         clippedDrawable = ClipDrawable(starDrawable, Gravity.START, ClipDrawable.HORIZONTAL)
+        starProgress = obtainStyledAttributes.getFloat(R.styleable.Rui_starProgress, 0f)
         obtainStyledAttributes.recycle()
     }
 
@@ -68,7 +71,7 @@ class Rui @JvmOverloads constructor(
         for (i in down until starCount + 1) {
             val start = i * (starWidth + starSpace)
             canvas.withTranslation(x = start) {
-                backgroundDrawable.let { drawable ->
+                backgroundDrawable?.let { drawable ->
                     drawable.setBounds(0, 0, starWidth, starWidth)
                     drawable.draw(canvas)
                 }

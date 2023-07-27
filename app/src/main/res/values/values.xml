@@ -5,5 +5,6 @@
         <attr name="isIndicator" format="boolean" />
         <attr name="starCount" format="integer" />
         <attr name="ratingBarStyle" format="reference" />
+        <attr name="starProgress" format="float" />
     </declare-styleable>
 </resources>

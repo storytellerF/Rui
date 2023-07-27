@@ -17,7 +17,7 @@
 
     <com.storyteller_f.rui.Rui
         android:layout_width="300dp"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:layout_margin="40dp"
         app:ratingBarStyle="@drawable/nft_rating_bar"
         app:starSpace="20dp" />

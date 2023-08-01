@@ -2,14 +2,15 @@ package com.storyteller_f.rui
 
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.PointF
 import android.graphics.drawable.ClipDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.LayerDrawable
 import android.util.AttributeSet
 import android.view.Gravity
-import android.graphics.PointF
 import android.view.MotionEvent
 import android.view.View
+import androidx.core.graphics.minus
 import androidx.core.graphics.withTranslation
 import kotlin.math.ceil
 import kotlin.math.floor
@@ -120,7 +121,7 @@ class Rui @JvmOverloads constructor(context: Context, attributeSet: AttributeSet
         val currentPoint = PointF(x, event.y)
         when (event.action) {
             MotionEvent.ACTION_MOVE -> {
-                progressWhenMoving = (x / currentWidth) * starCount
+                progressWhenMoving = ((x / currentWidth) * starCount).coerceAtMost(starCount.toFloat())
                 invalidate()
             }
 
@@ -136,9 +137,9 @@ class Rui @JvmOverloads constructor(context: Context, attributeSet: AttributeSet
                         ceil(currentMovingProgress)
                     } else {
                         val starWidth = getStarWidth(currentWidth)
-                        val starAndSpace = starWidth + starSpace
+                        val starWidthAndSpace = starWidth + starSpace
                         // 触摸位置在第几个星星
-                        val position = ceil(x / starAndSpace).toInt()
+                        val position = ceil(x / starWidthAndSpace).toInt()
                         val oldPosition = ceil(starProgress).toInt()
                         val oldSplitStar = oldPosition - starProgress > 0
                         when {
@@ -168,7 +169,6 @@ class Rui @JvmOverloads constructor(context: Context, attributeSet: AttributeSet
         fun onChanged(progress: Float, max: Int, fromUser: Boolean): Boolean
     }
 }
-
 
 val PointF.sumOfSquares: Float
     get() {

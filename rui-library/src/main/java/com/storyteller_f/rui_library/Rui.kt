@@ -1,5 +1,6 @@
-package com.storyteller_f.rui
+package com.storyteller_f.rui_library
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.PointF
@@ -71,7 +72,7 @@ class Rui @JvmOverloads constructor(context: Context, attributeSet: AttributeSet
         canvas ?: return
         val starWidth = getStarWidth(measuredWidth).toInt()
 
-        val currentProgress = if (progressWhenMoving > 0f) progressWhenMoving else starProgress
+        val currentProgress = if (progressWhenMoving >= 0f) progressWhenMoving else starProgress
         val fullStarCount = floor(currentProgress).toInt()
         for (i in fullStarCount until starCount) {
             val start = starStartAt(i, starWidth)
@@ -113,15 +114,16 @@ class Rui @JvmOverloads constructor(context: Context, attributeSet: AttributeSet
     /**
      * 大于0 代表正在触摸滑动
      */
-    private var progressWhenMoving: Float = 0f
+    private var progressWhenMoving: Float = -1f
+    @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         if (event == null || isIndicator) return super.onTouchEvent(event)
-        val x = event.x
         val currentWidth = measuredWidth
+        val x = if (starDirection == Direction.left) event.x else currentWidth - event.x
         val currentPoint = PointF(x, event.y)
         when (event.action) {
             MotionEvent.ACTION_MOVE -> {
-                progressWhenMoving = ((x / currentWidth) * starCount).coerceAtMost(starCount.toFloat())
+                progressWhenMoving = ((x / currentWidth) * starCount).coerceIn(0f..starCount.toFloat())
                 invalidate()
             }
 

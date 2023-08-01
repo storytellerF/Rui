@@ -15,13 +15,15 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <com.storyteller_f.rui.Rui
+    <com.storyteller_f.rui_library.Rui
         android:id="@+id/rui"
         android:layout_width="300dp"
         android:layout_height="wrap_content"
         android:layout_margin="40dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
         app:ratingBarStyle="@drawable/nft_rating_bar"
-        app:starProgress="2.5"
         app:starDirection="right"
+        app:starProgress="2.5"
         app:starSpace="20dp" />
 </androidx.constraintlayout.widget.ConstraintLayout>

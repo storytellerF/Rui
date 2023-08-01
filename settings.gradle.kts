@@ -1,3 +1,5 @@
+@file:Suppress("UnstableApiUsage")
+
 pluginManagement {
     repositories {
         google()
@@ -15,4 +17,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Rui"
 include(":app")
- 
+include(":rui-library")

@@ -23,7 +23,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:ratingBarStyle="@drawable/nft_rating_bar"
-        app:starDirection="right"
         app:starProgress="2.5"
         app:starSpace="20dp" />
 </androidx.constraintlayout.widget.ConstraintLayout>

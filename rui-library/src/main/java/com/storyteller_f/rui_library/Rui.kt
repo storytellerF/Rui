@@ -64,8 +64,11 @@ class Rui @JvmOverloads constructor(context: Context, attributeSet: AttributeSet
         setMeasuredDimension(inheritedWidth, starWidth.toInt())
     }
 
-    private fun getStarWidth(inheritedWidth: Int) =
-        (inheritedWidth - starSpace * (starCount - 1)) / starCount
+    /**
+     * @return 返回一个星星的宽
+     */
+    private fun getStarWidth(viewWidth: Int) =
+        (viewWidth - starSpace * (starCount - 1)) / starCount
 
     override fun onDraw(canvas: Canvas?) {
         super.onDraw(canvas)
@@ -98,7 +101,8 @@ class Rui @JvmOverloads constructor(context: Context, attributeSet: AttributeSet
         }
     }
 
-    private fun starStartAt(i: Int, starWidth: Int) = (if (starDirection == Direction.right) starCount - 1 - i else i) * (starWidth + starSpace)
+    private fun starStartAt(i: Int, starWidth: Int) =
+        (if (starDirection == Direction.right) starCount - 1 - i else i) * (starWidth + starSpace)
 
     private fun drawStar(
         drawable: Drawable?,
@@ -115,6 +119,7 @@ class Rui @JvmOverloads constructor(context: Context, attributeSet: AttributeSet
      * 大于0 代表正在触摸滑动
      */
     private var progressWhenMoving: Float = -1f
+
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         if (event == null || isIndicator) return super.onTouchEvent(event)
@@ -123,7 +128,8 @@ class Rui @JvmOverloads constructor(context: Context, attributeSet: AttributeSet
         val currentPoint = PointF(x, event.y)
         when (event.action) {
             MotionEvent.ACTION_MOVE -> {
-                progressWhenMoving = ((x / currentWidth) * starCount).coerceIn(0f..starCount.toFloat())
+                progressWhenMoving =
+                    ((x / currentWidth) * starCount).coerceIn(0f..starCount.toFloat())
                 invalidate()
             }
 
@@ -134,19 +140,23 @@ class Rui @JvmOverloads constructor(context: Context, attributeSet: AttributeSet
 
             MotionEvent.ACTION_UP -> {
                 val currentMovingProgress = progressWhenMoving
+                val starWidth = getStarWidth(currentWidth)
+                val starWidthAndSpace = starWidth + starSpace
                 val newStarProgress =
-                    if (currentMovingProgress > 0 && (positionWhenTouchDown.minus(currentPoint).sumOfSquares > 20)) {
-                        ceil(currentMovingProgress)
+                    if (currentMovingProgress >= 0 && (positionWhenTouchDown.minus(currentPoint).sumOfSquares > 20)) {
+                        //检查是否超过1半的星星
+                        if (x % starWidthAndSpace < starWidth / 2)
+                            floor(currentMovingProgress) + 0.5f
+                        else
+                            ceil(currentMovingProgress)
                     } else {
-                        val starWidth = getStarWidth(currentWidth)
-                        val starWidthAndSpace = starWidth + starSpace
                         // 触摸位置在第几个星星
                         val position = ceil(x / starWidthAndSpace).toInt()
                         val oldPosition = ceil(starProgress).toInt()
-                        val oldSplitStar = oldPosition - starProgress > 0
+                        val oldContainHalfStar = oldPosition - starProgress > 0
                         when {
                             position != oldPosition -> position.toFloat() - 0.5f
-                            oldSplitStar -> {
+                            oldContainHalfStar -> {
                                 position.toFloat()
                             }
 
@@ -160,7 +170,7 @@ class Rui @JvmOverloads constructor(context: Context, attributeSet: AttributeSet
                     starProgress = newStarProgress
                 } else if (currentListener.onChanged(newStarProgress, starCount, true)) {
                     starProgress = newStarProgress
-                }
+                } else invalidate()
             }
         }
         return true

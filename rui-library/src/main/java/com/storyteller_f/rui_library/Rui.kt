@@ -124,12 +124,12 @@ class Rui @JvmOverloads constructor(context: Context, attributeSet: AttributeSet
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         if (event == null || isIndicator) return super.onTouchEvent(event)
         val currentWidth = measuredWidth
-        val x = if (starDirection == Direction.left) event.x else currentWidth - event.x
+        val validX = event.x.coerceIn(0f, currentWidth.toFloat())
+        val x = if (starDirection == Direction.left) validX else currentWidth - validX
         val currentPoint = PointF(x, event.y)
         when (event.action) {
             MotionEvent.ACTION_MOVE -> {
-                progressWhenMoving =
-                    ((x / currentWidth) * starCount).coerceIn(0f..starCount.toFloat())
+                progressWhenMoving = (x / currentWidth) * starCount
                 invalidate()
             }
 
